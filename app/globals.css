@@ -1,0 +1,316 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #000000;
+  --color-foreground: #fafafa;
+  --color-muted: #71717a;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-accent: #ffffff;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "Cascadia Mono", monospace;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 22px;
+
+  --shadow-glow:
+    0 0 0 1px rgba(255, 255, 255, 0.06), 0 30px 80px -20px rgba(0, 0, 0, 0.8);
+}
+
+html,
+body {
+  background: #000;
+  color: #fafafa;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a,button{
+  cursor: pointer;
+}
+
+::selection {
+  background: #fff;
+  color: #000;
+}
+
+.cl-card {
+  background-color: #000 !important;
+}
+
+.cl-footer {
+  background: #000 !important;
+}
+
+.cl-internal-1dauvpw {
+  display: none !important;
+}
+
+.cl-userButtonPopoverMain {
+  background-color: #000 !important;
+}
+
+.cl-userButtonPopoverFooter {
+  background: #000 !important;
+}
+
+.cl-internal-l2l775 {
+  display: none !important;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.16);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+
+/* Grid texture for hero backgrounds */
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 48px 48px;
+  background-position: -1px -1px;
+}
+
+.bg-grid-fade {
+  -webkit-mask-image: radial-gradient(
+    ellipse at top,
+    black 30%,
+    transparent 75%
+  );
+  mask-image: radial-gradient(ellipse at top, black 30%, transparent 75%);
+}
+
+.bg-noise {
+  background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.07 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+/* Subtle wash for cards on dark surfaces */
+.card-wash {
+  background:
+    radial-gradient(
+      120% 80% at 50% -10%,
+      rgba(255, 255, 255, 0.04),
+      transparent 60%
+    ),
+    rgba(255, 255, 255, 0.02);
+}
+
+/* Markdown rendered content */
+.prose-notes {
+  color: #e4e4e7;
+  font-size: 15px;
+  line-height: 1.7;
+}
+.prose-notes h1,
+.prose-notes h2,
+.prose-notes h3,
+.prose-notes h4 {
+  color: #fafafa;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 1.4em 0 0.6em;
+}
+.prose-notes h1 {
+  font-size: 1.875rem;
+}
+.prose-notes h2 {
+  font-size: 1.5rem;
+}
+.prose-notes h3 {
+  font-size: 1.25rem;
+}
+.prose-notes h4 {
+  font-size: 1.05rem;
+}
+.prose-notes p {
+  margin: 0.8em 0;
+}
+.prose-notes a {
+  color: #fff;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.3);
+  text-underline-offset: 3px;
+}
+.prose-notes a:hover {
+  text-decoration-color: #fff;
+}
+.prose-notes strong {
+  color: #fff;
+}
+.prose-notes em {
+  color: #f4f4f5;
+  font-style: italic;
+}
+.prose-notes ul,
+.prose-notes ol {
+  padding-left: 1.4em;
+  margin: 0.8em 0;
+}
+.prose-notes li {
+  margin: 0.25em 0;
+}
+.prose-notes ul li::marker {
+  color: #71717a;
+}
+.prose-notes ol li::marker {
+  color: #71717a;
+}
+.prose-notes blockquote {
+  border-left: 2px solid rgba(255, 255, 255, 0.2);
+  padding-left: 1em;
+  color: #a1a1aa;
+  margin: 1em 0;
+  font-style: italic;
+}
+.prose-notes code {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  font-size: 0.875em;
+  font-family: var(--font-mono);
+}
+.prose-notes pre {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1em;
+  border-radius: 10px;
+  overflow-x: auto;
+  margin: 1em 0;
+  font-size: 0.875em;
+}
+.prose-notes pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+.prose-notes hr {
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 2em 0;
+}
+.prose-notes table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+  font-size: 0.9em;
+}
+.prose-notes th,
+.prose-notes td {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.5em 0.75em;
+  text-align: left;
+}
+.prose-notes th {
+  background: rgba(255, 255, 255, 0.03);
+  font-weight: 600;
+}
+.prose-notes input[type="checkbox"] {
+  margin-right: 0.5em;
+  accent-color: #fff;
+}
+
+/* Animations */
+@keyframes fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out both;
+}
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.08),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite linear;
+}
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+/* Focus ring */
+.focus-ring:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px #000,
+    0 0 0 4px #fff;
+}
