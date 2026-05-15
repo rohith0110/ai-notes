@@ -13,6 +13,7 @@ A collaborative, AI-powered notes workspace. Write in markdown, generate summari
 ## Features
 
 ### Notes Workspace
+
 - Markdown editor with live preview toggle (`Ctrl+/`)
 - Auto-save on 700ms debounce
 - Tags and categories for organization
@@ -20,6 +21,7 @@ A collaborative, AI-powered notes workspace. Write in markdown, generate summari
 - Full-text search with fuzzy ranking (title → tag → body, recency boost)
 
 ### AI Integration
+
 - **Summaries** — 1-3 sentence distillation of note content
 - **Action items** — concrete tasks extracted from the note
 - **Suggested titles** — 3-8 word titles generated from content
@@ -28,6 +30,7 @@ A collaborative, AI-powered notes workspace. Write in markdown, generate summari
 - Single Gemini call returns all artifacts as strict JSON
 
 ### Real-Time Collaboration
+
 - Toggle a note **public** to mint a `/share/:id` URL
 - Visitors read without login; signed-in users can **request edit access**
 - Owner approves/denies via a real-time notifications bell
@@ -35,25 +38,27 @@ A collaborative, AI-powered notes workspace. Write in markdown, generate summari
 - Per-field sync: editing content doesn't block title/tag updates from other users
 
 ### Productivity Dashboard
+
 - Total notes, word count, AI usage stats
 - Most-used tags breakdown
 - Weekly activity sparkline (edits + AI calls)
 
 ### Keyboard Shortcuts
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl+N` / `⌘N` | New note |
-| `Ctrl+K` / `⌘K` | Focus search |
+
+| Shortcut        | Action               |
+| --------------- | -------------------- |
+| `Ctrl+N` / `⌘N` | New note             |
+| `Ctrl+K` / `⌘K` | Focus search         |
 | `Ctrl+/` / `⌘/` | Toggle write/preview |
-| `Ctrl+.` / `⌘.` | Toggle AI panel |
-| `Ctrl+B` / `⌘B` | Bold |
-| `Ctrl+I` / `⌘I` | Italic |
+| `Ctrl+.` / `⌘.` | Toggle AI panel      |
+| `Ctrl+B` / `⌘B` | Bold                 |
+| `Ctrl+I` / `⌘I` | Italic               |
 
 ---
 
 ## Architecture
 
-```
+```plaintext
 Next.js (App Router)              Convex (serverless)
 ─────────────────────             ─────────────────────
 app/                              convex/
@@ -67,32 +72,33 @@ proxy.ts          (Clerk gate)      insights.ts    (dashboard)
 
 ### Data Model
 
-| Table | Purpose |
-|-------|---------|
-| `users` | Clerk → Convex shadow records |
-| `notes` | Markdown content, AI artifacts, share state |
-| `collaborators` | `(noteId, userId, role)` — editor/viewer |
+| Table           | Purpose                                       |
+| --------------- | --------------------------------------------- |
+| `users`         | Clerk → Convex shadow records                 |
+| `notes`         | Markdown content, AI artifacts, share state   |
+| `collaborators` | `(noteId, userId, role)` — editor/viewer      |
 | `shareRequests` | Pending access requests, drives notifications |
-| `activityLog` | Edit/AI events, feeds weekly sparkline |
+| `activityLog`   | Edit/AI events, feeds weekly sparkline        |
 
 ### API Endpoints
 
 The app uses Convex's typed RPC internally. REST adapters are available at:
 
-| Method | Endpoint | Maps to |
-|--------|----------|---------|
-| `GET` | `/api/notes` | `notes.list` |
-| `POST` | `/api/notes` | `notes.create` |
-| `GET` | `/api/notes/:id` | `notes.get` |
-| `PATCH` | `/api/notes/:id` | `notes.update` |
-| `DELETE` | `/api/notes/:id` | `notes.remove` |
-| `POST` | `/api/notes/:id/generate-summary` | `ai.generate` |
-| `GET` | `/api/shared/:shareId` | `notes.getByShareId` |
-| `POST` | `/api/shared/:shareId/request` | `share.requestAccess` |
+| Method   | Endpoint                          | Maps to               |
+| -------- | --------------------------------- | --------------------- |
+| `GET`    | `/api/notes`                      | `notes.list`          |
+| `POST`   | `/api/notes`                      | `notes.create`        |
+| `GET`    | `/api/notes/:id`                  | `notes.get`           |
+| `PATCH`  | `/api/notes/:id`                  | `notes.update`        |
+| `DELETE` | `/api/notes/:id`                  | `notes.remove`        |
+| `POST`   | `/api/notes/:id/generate-summary` | `ai.generate`         |
+| `GET`    | `/api/shared/:shareId`            | `notes.getByShareId`  |
+| `POST`   | `/api/shared/:shareId/request`    | `share.requestAccess` |
 
 Authentication is handled by Clerk (modal flow, JWT sessions).
 
 ### Why Convex?
+
 - **Reactive queries** — editor, sidebar, notifications all live-update without polling
 - **Built-in full-text search** — keyword search with re-ranking client-side
 - **Server actions** — Gemini calls run securely without exposing API keys
@@ -102,6 +108,7 @@ Authentication is handled by Clerk (modal flow, JWT sessions).
 ## Sample Outputs
 
 See [`sample-outputs/`](./sample-outputs):
+
 - `api-responses.json` — example responses from each endpoint
 - `ai-summaries.json` — three Gemini outputs (short, medium, long content)
 - `database-schema.json` — full schema with field types and indexes
