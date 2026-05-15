@@ -2,17 +2,28 @@
 
 ## Getting Your Auth Token
 
-Before hitting any protected endpoint, you need a Clerk **session token**.
+The API forwards your token straight to Convex, so you must mint the
+**`convex` JWT template** token — _not_ the default session token. The default
+token has the wrong audience and Convex will reject it.
 
 **In your browser (any OS):**
-1. Go to `https://notes.itsrohith.dev` and sign in
+
+1. Go to the app and sign in (`https://notes.itsrohith.dev`, or
+   `http://localhost:3000` if running locally)
 2. Open DevTools → Console tab
-3. Paste and run:
+3. Paste and run — note the `{ template: "convex" }` argument:
+
 ```js
-const token = await window.Clerk.session.getToken();
+const token = await window.Clerk.session.getToken({ template: "convex" });
 console.log(token);
 ```
+
 4. Copy the printed token — it's valid for ~1 hour
+
+> If you omit `{ template: "convex" }` you'll get a different token and every
+> authenticated call will fail with a Convex auth error.
+> **Testing locally?** Replace `https://notes.itsrohith.dev` with
+> `http://localhost:3000` in every command below.
 
 ---
 
@@ -21,6 +32,7 @@ console.log(token);
 > ⚠️ `curl` in PowerShell is an alias for `Invoke-WebRequest` — it does **not** accept `-H` flags. Use the full `Invoke-WebRequest` syntax or use `curl.exe` instead.
 
 **Option A — Use `curl.exe` (recommended, ships with Windows 10+):**
+
 ```powershell
 # Store token in a variable first
 $TOKEN = "paste_your_token_here"
@@ -28,8 +40,20 @@ $TOKEN = "paste_your_token_here"
 # GET /api/notes
 curl.exe -s https://notes.itsrohith.dev/api/notes -H "Authorization: Bearer $TOKEN"
 
-# POST /api/notes (create note)
+# POST /api/notes — empty note (title defaults to "Untitled")
 curl.exe -s -X POST https://notes.itsrohith.dev/api/notes -H "Authorization: Bearer $TOKEN"
+
+# POST /api/notes — with content only
+curl.exe -s -X POST https://notes.itsrohith.dev/api/notes `
+  -H "Authorization: Bearer $TOKEN" `
+  -H "Content-Type: application/json" `
+  -d "{\"content\": \"# My note\n\nSome content here.\"}"
+
+# POST /api/notes — with title, content, and tags
+curl.exe -s -X POST https://notes.itsrohith.dev/api/notes `
+  -H "Authorization: Bearer $TOKEN" `
+  -H "Content-Type: application/json" `
+  -d "{\"title\": \"Sprint Planning\", \"content\": \"## Goals\n\n- Ship feature X\", \"tags\": [\"work\", \"planning\"]}"
 
 # GET /api/notes/:id
 curl.exe -s https://notes.itsrohith.dev/api/notes/NOTE_ID_HERE -H "Authorization: Bearer $TOKEN"
@@ -51,6 +75,7 @@ curl.exe -s https://notes.itsrohith.dev/api/shared/SHARE_ID_HERE
 ```
 
 **Option B — Native PowerShell `Invoke-WebRequest`:**
+
 ```powershell
 $TOKEN = "paste_your_token_here"
 $HEADERS = @{ "Authorization" = "Bearer $TOKEN" }
@@ -58,8 +83,21 @@ $HEADERS = @{ "Authorization" = "Bearer $TOKEN" }
 # GET /api/notes
 (Invoke-WebRequest -Uri "https://notes.itsrohith.dev/api/notes" -Headers $HEADERS).Content
 
-# POST /api/notes
+# POST /api/notes — empty note
 (Invoke-WebRequest -Uri "https://notes.itsrohith.dev/api/notes" -Method POST -Headers $HEADERS).Content
+
+# POST /api/notes — with content only
+$JSON_HEADERS = @{ "Authorization" = "Bearer $TOKEN"; "Content-Type" = "application/json" }
+(Invoke-WebRequest `
+  -Uri "https://notes.itsrohith.dev/api/notes" `
+  -Method POST -Headers $JSON_HEADERS `
+  -Body '{"content": "# My note\n\nSome content here."}').Content
+
+# POST /api/notes — with title, content, and tags
+(Invoke-WebRequest `
+  -Uri "https://notes.itsrohith.dev/api/notes" `
+  -Method POST -Headers $JSON_HEADERS `
+  -Body '{"title": "Sprint Planning", "content": "## Goals\n\n- Ship feature X", "tags": ["work", "planning"]}').Content
 
 # GET /api/notes/:id
 (Invoke-WebRequest -Uri "https://notes.itsrohith.dev/api/notes/NOTE_ID_HERE" -Headers $HEADERS).Content
@@ -92,9 +130,21 @@ TOKEN="paste_your_token_here"
 curl -s https://notes.itsrohith.dev/api/notes \
   -H "Authorization: Bearer $TOKEN" | jq
 
-# POST /api/notes (create note)
+# POST /api/notes — empty note (title defaults to "Untitled")
 curl -s -X POST https://notes.itsrohith.dev/api/notes \
   -H "Authorization: Bearer $TOKEN" | jq
+
+# POST /api/notes — with content only
+curl -s -X POST https://notes.itsrohith.dev/api/notes \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"content": "# My note\n\nSome content here."}' | jq
+
+# POST /api/notes — with title, content, and tags
+curl -s -X POST https://notes.itsrohith.dev/api/notes \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Sprint Planning", "content": "## Goals\n\n- Ship feature X", "tags": ["work", "planning"]}' | jq
 
 # GET /api/notes/:id
 curl -s https://notes.itsrohith.dev/api/notes/NOTE_ID_HERE \
@@ -134,14 +184,15 @@ curl -s -X POST https://notes.itsrohith.dev/api/shared/SHARE_ID_HERE/request \
 
 If you prefer a visual interface:
 
-| Tool | Platform | Notes |
-|------|----------|-------|
-| [Bruno](https://www.usebruno.com/) | All | Free, open-source, files stored locally |
-| [Postman](https://www.postman.com/) | All | Free tier, popular |
-| [HTTPie Desktop](https://httpie.io/desktop) | All | Clean UI, free |
-| [Insomnia](https://insomnia.rest/) | All | Free tier |
+| Tool                                        | Platform | Notes                                   |
+| ------------------------------------------- | -------- | --------------------------------------- |
+| [Bruno](https://www.usebruno.com/)          | All      | Free, open-source, files stored locally |
+| [Postman](https://www.postman.com/)         | All      | Free tier, popular                      |
+| [HTTPie Desktop](https://httpie.io/desktop) | All      | Clean UI, free                          |
+| [Insomnia](https://insomnia.rest/)          | All      | Free tier                               |
 
 For any of these, set up a collection with:
+
 - Base URL: `https://notes.itsrohith.dev`
 - Auth type: **Bearer Token** → paste your Clerk token
 

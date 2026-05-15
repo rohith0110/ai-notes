@@ -1,11 +1,7 @@
 import { NextRequest } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
-import { json, error } from "../../_lib";
+import { json, error, bearerToken, convexFor } from "../../_lib";
 import { Id } from "@/convex/_generated/dataModel";
-
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 /**
  * GET /api/notes/:id
@@ -15,10 +11,9 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { getToken } = await auth();
-  const token = await getToken({ template: "convex" });
+  const token = bearerToken(req);
   if (!token) return error("Not authenticated", 401);
-  convex.setAuth(token);
+  const convex = convexFor(token);
 
   const { id } = await params;
 
@@ -28,8 +23,8 @@ export async function GET(
     });
     if (!note) return error("Note not found", 404);
     return json(note);
-  } catch (e: any) {
-    return error(e.message || "Failed to fetch note", 500);
+  } catch (e) {
+    return error(e instanceof Error ? e.message : "Failed to fetch note", 500);
   }
 }
 
@@ -42,10 +37,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { getToken } = await auth();
-  const token = await getToken({ template: "convex" });
+  const token = bearerToken(req);
   if (!token) return error("Not authenticated", 401);
-  convex.setAuth(token);
+  const convex = convexFor(token);
 
   const { id } = await params;
   const body = await req.json();
@@ -59,8 +53,8 @@ export async function PATCH(
       titleIsUserSet: body.titleIsUserSet,
     });
     return json({ success: true });
-  } catch (e: any) {
-    return error(e.message || "Failed to update note", 500);
+  } catch (e) {
+    return error(e instanceof Error ? e.message : "Failed to update note", 500);
   }
 }
 
@@ -72,10 +66,9 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { getToken } = await auth();
-  const token = await getToken({ template: "convex" });
+  const token = bearerToken(req);
   if (!token) return error("Not authenticated", 401);
-  convex.setAuth(token);
+  const convex = convexFor(token);
 
   const { id } = await params;
 
@@ -84,7 +77,7 @@ export async function DELETE(
       id: id as Id<"notes">,
     });
     return json({ success: true });
-  } catch (e: any) {
-    return error(e.message || "Failed to delete note", 500);
+  } catch (e) {
+    return error(e instanceof Error ? e.message : "Failed to delete note", 500);
   }
 }

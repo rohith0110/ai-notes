@@ -1,10 +1,6 @@
 import { NextRequest } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
-import { json, error } from "../_lib";
-
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+import { json, error, bearerToken, convexFor } from "../_lib";
 
 /**
  * GET /api/notes
@@ -12,11 +8,10 @@ const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
  * Query params: ?tag=work&archived=true
  */
 export async function GET(req: NextRequest) {
-  const { getToken } = await auth();
-  const token = await getToken({ template: "convex" });
+  const token = bearerToken(req);
   if (!token) return error("Not authenticated", 401);
 
-  convex.setAuth(token);
+  const convex = convexFor(token);
 
   const url = new URL(req.url);
   const tag = url.searchParams.get("tag") || undefined;
@@ -28,8 +23,8 @@ export async function GET(req: NextRequest) {
       archived,
     });
     return json(notes);
-  } catch (e: any) {
-    return error(e.message || "Failed to fetch notes", 500);
+  } catch (e) {
+    return error(e instanceof Error ? e.message : "Failed to fetch notes", 500);
   }
 }
 
@@ -38,16 +33,26 @@ export async function GET(req: NextRequest) {
  * Create a new note. Returns the new note ID.
  */
 export async function POST(req: NextRequest) {
-  const { getToken } = await auth();
-  const token = await getToken({ template: "convex" });
+  const token = bearerToken(req);
   if (!token) return error("Not authenticated", 401);
 
-  convex.setAuth(token);
+  const convex = convexFor(token);
+
+  const body = await req.json().catch(() => ({}));
+  const { title, content, tags } = body as {
+    title?: string;
+    content?: string;
+    tags?: string[];
+  };
 
   try {
-    const id = await convex.mutation(api.notes.create, {});
+    const id = await convex.mutation(api.notes.create, {
+      ...(title !== undefined && { title }),
+      ...(content !== undefined && { content }),
+      ...(tags !== undefined && { tags }),
+    });
     return json({ id }, 201);
-  } catch (e: any) {
-    return error(e.message || "Failed to create note", 500);
+  } catch (e) {
+    return error(e instanceof Error ? e.message : "Failed to create note", 500);
   }
 }

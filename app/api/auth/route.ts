@@ -1,4 +1,3 @@
-import { NextRequest } from "next/server";
 import { json } from "../_lib";
 
 /**
@@ -10,7 +9,7 @@ import { json } from "../_lib";
  * REST shape. In practice, Clerk manages signup/login/session via its
  * own API and JS SDK — no custom auth endpoints are needed.
  */
-export async function POST(req: NextRequest) {
+export async function POST() {
   return json({
     message:
       "Authentication is managed by Clerk. Use the Clerk SDK or the sign-in modal to authenticate. Sessions are persisted via secure cookies.",

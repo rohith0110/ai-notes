@@ -1,11 +1,7 @@
 import { NextRequest } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
-import { json, error } from "../../../_lib";
+import { json, error, bearerToken, convexFor } from "../../../_lib";
 import { Id } from "@/convex/_generated/dataModel";
-
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 /**
  * POST /api/notes/:id/generate-summary
@@ -23,10 +19,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { getToken } = await auth();
-  const token = await getToken({ template: "convex" });
+  const token = bearerToken(req);
   if (!token) return error("Not authenticated", 401);
-  convex.setAuth(token);
+  const convex = convexFor(token);
 
   const { id } = await params;
   const body = await req.json().catch(() => ({}));
@@ -39,7 +34,7 @@ export async function POST(
       applyTitle: body.applyTitle,
     });
     return json(result);
-  } catch (e: any) {
-    return error(e.message || "AI generation failed", 500);
+  } catch (e) {
+    return error(e instanceof Error ? e.message : "AI generation failed", 500);
   }
 }

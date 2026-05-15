@@ -1,10 +1,6 @@
 import { NextRequest } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
-import { json, error } from "../../../_lib";
-
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+import { json, error, bearerToken, convexFor } from "../../../_lib";
 
 /**
  * POST /api/shared/:shareId/request
@@ -17,10 +13,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ shareId: string }> },
 ) {
-  const { getToken } = await auth();
-  const token = await getToken({ template: "convex" });
+  const token = bearerToken(req);
   if (!token) return error("Not authenticated", 401);
-  convex.setAuth(token);
+  const convex = convexFor(token);
 
   const { shareId } = await params;
   const body = await req.json().catch(() => ({}));
@@ -31,7 +26,7 @@ export async function POST(
       message: body.message,
     });
     return json({ success: true, status: "pending" }, 201);
-  } catch (e: any) {
-    return error(e.message || "Failed to request access", 500);
+  } catch (e) {
+    return error(e instanceof Error ? e.message : "Failed to request access", 500);
   }
 }

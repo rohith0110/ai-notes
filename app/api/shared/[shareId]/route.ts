@@ -1,9 +1,6 @@
 import { NextRequest } from "next/server";
-import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
-import { json, error } from "../../_lib";
-
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+import { json, error, convexFor } from "../../_lib";
 
 /**
  * GET /api/shared/:shareId
@@ -17,12 +14,13 @@ export async function GET(
   { params }: { params: Promise<{ shareId: string }> },
 ) {
   const { shareId } = await params;
+  const convex = convexFor();
 
   try {
     const note = await convex.query(api.notes.getByShareId, { shareId });
     if (!note) return error("Shared note not found", 404);
     return json(note);
-  } catch (e: any) {
-    return error(e.message || "Failed to fetch shared note", 500);
+  } catch (e) {
+    return error(e instanceof Error ? e.message : "Failed to fetch shared note", 500);
   }
 }

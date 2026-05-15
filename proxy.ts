@@ -3,8 +3,6 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 const isPublicRoute = createRouteMatcher([
   "/",
   "/share/(.*)",
-  "/api/(.*)",          // API routes handle auth internally via Bearer token
-  "/api/webhooks/(.*)",
   "/sign-in(.*)",
   "/sign-up(.*)",
 ]);
@@ -17,7 +15,10 @@ export default clerkMiddleware(async (auth, req) => {
 
 export const config = {
   matcher: [
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    "/(api|trpc)(.*)",
+    // Run on pages only. `/api/*` is intentionally excluded: those routes
+    // authenticate via a Bearer token they read themselves and forward to
+    // Convex. Letting Clerk's dev-browser handshake run on them rewrites the
+    // request to a 404 HTML page for any non-browser client (curl, Postman…).
+    "/((?!api|_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
   ],
 };
