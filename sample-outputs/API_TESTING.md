@@ -22,8 +22,22 @@ console.log(token);
 
 > If you omit `{ template: "convex" }` you'll get a different token and every
 > authenticated call will fail with a Convex auth error.
+
 > **Testing locally?** Replace `https://notes.itsrohith.dev` with
 > `http://localhost:3000` in every command below.
+
+---
+
+## Sharing Flow (end-to-end)
+
+Sharing has three steps you can fully exercise via the API:
+
+| Step | Who | Endpoint |
+| ---- | --- | -------- |
+| 1 | Owner — enable sharing | `POST /api/notes/:id/share` → returns `shareId` + `shareUrl` |
+| 2 | Anyone — read the note | `GET /api/shared/:shareId` (no auth) |
+| 3 | Another user — request edit access | `POST /api/shared/:shareId/request` |
+| — | Owner — disable sharing | `DELETE /api/notes/:id/share` |
 
 ---
 
@@ -64,14 +78,35 @@ curl.exe -s -X PATCH https://notes.itsrohith.dev/api/notes/NOTE_ID_HERE `
   -H "Content-Type: application/json" `
   -d "{\"title\": \"Updated Title\", \"content\": \"New content here\"}"
 
+# DELETE /api/notes/:id
+curl.exe -s -X DELETE https://notes.itsrohith.dev/api/notes/NOTE_ID_HERE `
+  -H "Authorization: Bearer $TOKEN"
+
 # POST /api/notes/:id/generate-summary
 curl.exe -s -X POST https://notes.itsrohith.dev/api/notes/NOTE_ID_HERE/generate-summary `
   -H "Authorization: Bearer $TOKEN" `
   -H "Content-Type: application/json" `
   -d "{\"kinds\": [\"summary\", \"title\", \"actions\", \"tags\"], \"force\": true}"
 
-# GET /api/shared/:shareId (no auth needed)
+# ── Sharing ──────────────────────────────────────────────────────────────────
+
+# POST /api/notes/:id/share — enable sharing, returns shareId + shareUrl
+curl.exe -s -X POST https://notes.itsrohith.dev/api/notes/NOTE_ID_HERE/share `
+  -H "Authorization: Bearer $TOKEN"
+# Response: { "shareId": "abc123", "shareUrl": "https://notes.itsrohith.dev/share/abc123" }
+
+# GET /api/shared/:shareId — verify the note is publicly readable (no auth)
 curl.exe -s https://notes.itsrohith.dev/api/shared/SHARE_ID_HERE
+
+# POST /api/shared/:shareId/request — request edit access (different user's token)
+curl.exe -s -X POST https://notes.itsrohith.dev/api/shared/SHARE_ID_HERE/request `
+  -H "Authorization: Bearer $TOKEN" `
+  -H "Content-Type: application/json" `
+  -d "{\"message\": \"Can I help edit this?\"}"
+
+# DELETE /api/notes/:id/share — disable sharing
+curl.exe -s -X DELETE https://notes.itsrohith.dev/api/notes/NOTE_ID_HERE/share `
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 **Option B — Native PowerShell `Invoke-WebRequest`:**
@@ -79,6 +114,7 @@ curl.exe -s https://notes.itsrohith.dev/api/shared/SHARE_ID_HERE
 ```powershell
 $TOKEN = "paste_your_token_here"
 $HEADERS = @{ "Authorization" = "Bearer $TOKEN" }
+$JSON_HEADERS = @{ "Authorization" = "Bearer $TOKEN"; "Content-Type" = "application/json" }
 
 # GET /api/notes
 (Invoke-WebRequest -Uri "https://notes.itsrohith.dev/api/notes" -Headers $HEADERS).Content
@@ -87,7 +123,6 @@ $HEADERS = @{ "Authorization" = "Bearer $TOKEN" }
 (Invoke-WebRequest -Uri "https://notes.itsrohith.dev/api/notes" -Method POST -Headers $HEADERS).Content
 
 # POST /api/notes — with content only
-$JSON_HEADERS = @{ "Authorization" = "Bearer $TOKEN"; "Content-Type" = "application/json" }
 (Invoke-WebRequest `
   -Uri "https://notes.itsrohith.dev/api/notes" `
   -Method POST -Headers $JSON_HEADERS `
@@ -103,19 +138,33 @@ $JSON_HEADERS = @{ "Authorization" = "Bearer $TOKEN"; "Content-Type" = "applicat
 (Invoke-WebRequest -Uri "https://notes.itsrohith.dev/api/notes/NOTE_ID_HERE" -Headers $HEADERS).Content
 
 # POST /api/notes/:id/generate-summary
-$BODY = '{"kinds": ["summary", "title", "actions", "tags"], "force": true}'
-$JSON_HEADERS = @{
-  "Authorization"  = "Bearer $TOKEN"
-  "Content-Type"   = "application/json"
-}
 (Invoke-WebRequest `
   -Uri "https://notes.itsrohith.dev/api/notes/NOTE_ID_HERE/generate-summary" `
   -Method POST `
   -Headers $JSON_HEADERS `
-  -Body $BODY).Content
+  -Body '{"kinds": ["summary", "title", "actions", "tags"], "force": true}').Content
 
-# GET /api/shared/:shareId (no auth)
+# ── Sharing ──────────────────────────────────────────────────────────────────
+
+# POST /api/notes/:id/share — enable sharing
+(Invoke-WebRequest `
+  -Uri "https://notes.itsrohith.dev/api/notes/NOTE_ID_HERE/share" `
+  -Method POST -Headers $HEADERS).Content
+# Response: { "shareId": "abc123", "shareUrl": "https://notes.itsrohith.dev/share/abc123" }
+
+# GET /api/shared/:shareId — verify publicly readable (no auth)
 (Invoke-WebRequest -Uri "https://notes.itsrohith.dev/api/shared/SHARE_ID_HERE").Content
+
+# POST /api/shared/:shareId/request — request edit access
+(Invoke-WebRequest `
+  -Uri "https://notes.itsrohith.dev/api/shared/SHARE_ID_HERE/request" `
+  -Method POST -Headers $JSON_HEADERS `
+  -Body '{"message": "Can I help edit this?"}').Content
+
+# DELETE /api/notes/:id/share — disable sharing
+(Invoke-WebRequest `
+  -Uri "https://notes.itsrohith.dev/api/notes/NOTE_ID_HERE/share" `
+  -Method DELETE -Headers $HEADERS).Content
 ```
 
 ---
@@ -166,14 +215,25 @@ curl -s -X POST https://notes.itsrohith.dev/api/notes/NOTE_ID_HERE/generate-summ
   -H "Content-Type: application/json" \
   -d '{"kinds": ["summary", "title", "actions", "tags"], "force": true}' | jq
 
-# GET /api/shared/:shareId (no auth required)
+# ── Sharing ──────────────────────────────────────────────────────────────────
+
+# POST /api/notes/:id/share — enable sharing, returns shareId + shareUrl
+curl -s -X POST https://notes.itsrohith.dev/api/notes/NOTE_ID_HERE/share \
+  -H "Authorization: Bearer $TOKEN" | jq
+# Response: { "shareId": "abc123", "shareUrl": "https://notes.itsrohith.dev/share/abc123" }
+
+# GET /api/shared/:shareId — verify the note is publicly readable (no auth)
 curl -s https://notes.itsrohith.dev/api/shared/SHARE_ID_HERE | jq
 
-# POST /api/shared/:shareId/request (request edit access)
+# POST /api/shared/:shareId/request — request edit access (different user's token)
 curl -s -X POST https://notes.itsrohith.dev/api/shared/SHARE_ID_HERE/request \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"message": "Can I help edit this?"}' | jq
+
+# DELETE /api/notes/:id/share — disable sharing
+curl -s -X DELETE https://notes.itsrohith.dev/api/notes/NOTE_ID_HERE/share \
+  -H "Authorization: Bearer $TOKEN" | jq
 ```
 
 > Install `jq` for pretty JSON output: `brew install jq` (macOS) or `sudo apt install jq` (Ubuntu)
@@ -200,14 +260,23 @@ For any of these, set up a collection with:
 
 ## Finding Real IDs to Test With
 
-After creating notes in the app, find IDs from the `/api/notes` response:
+Get note IDs from the `/api/notes` list:
 
 ```bash
 # Windows
 curl.exe -s https://notes.itsrohith.dev/api/notes -H "Authorization: Bearer $TOKEN"
 
-# macOS/Linux
+# macOS/Linux — just the first ID
 curl -s https://notes.itsrohith.dev/api/notes -H "Authorization: Bearer $TOKEN" | jq '.[0]._id'
 ```
 
-For `shareId`, share a note in the app UI → the share URL will be `…/share/SHARE_ID` — copy that ID.
+Get a `shareId` by sharing a note via `POST /api/notes/:id/share` — the response
+includes both `shareId` and the ready-to-use `shareUrl`:
+
+```json
+{ "shareId": "abc123xyz", "shareUrl": "https://notes.itsrohith.dev/share/abc123xyz" }
+```
+
+You can paste `shareUrl` directly into a browser to confirm the note is publicly
+visible, or hit `GET /api/shared/:shareId` with no auth header to verify it
+programmatically.

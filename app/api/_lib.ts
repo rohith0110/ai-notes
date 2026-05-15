@@ -36,3 +36,17 @@ export function json(data: unknown, status = 200) {
 export function error(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
 }
+
+/**
+ * Map a Convex mutation/query error message to the appropriate HTTP status.
+ * Convex surfaces thrown Error messages verbatim on the client, so we match
+ * against the message text set in the mutation handlers.
+ */
+export function convexErrStatus(msg: string): number {
+  if (/not found/i.test(msg)) return 404;
+  if (/already own/i.test(msg)) return 403;
+  if (/not allowed|forbidden/i.test(msg)) return 403;
+  if (/access denied/i.test(msg)) return 403;
+  if (/not authenticated|unauthenticated|invalid.*auth/i.test(msg)) return 401;
+  return 500;
+}

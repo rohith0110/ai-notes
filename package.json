@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:api": "node scripts/test-share-api.mjs",
+    "test:api:auth": "node scripts/test-share-api.mjs"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.3.4",
