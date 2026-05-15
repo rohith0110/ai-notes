@@ -4,6 +4,8 @@ A collaborative, AI-powered notes workspace. Write in markdown, generate summari
 
 **Stack:** Next.js 16 · Convex · Clerk · Google Gemini · Tailwind 4
 
+**Live demo:** [notes.itsrohith.dev](https://notes.itsrohith.dev)
+
 > **Setup instructions** → [`SETUP.md`](./SETUP.md)
 
 ---

@@ -3,6 +3,7 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 const isPublicRoute = createRouteMatcher([
   "/",
   "/share/(.*)",
+  "/api/(.*)",          // API routes handle auth internally via Bearer token
   "/api/webhooks/(.*)",
   "/sign-in(.*)",
   "/sign-up(.*)",
