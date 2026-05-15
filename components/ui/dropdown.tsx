@@ -43,13 +43,14 @@ export const DropdownTrigger = React.forwardRef<
   React.ButtonHTMLAttributes<HTMLButtonElement>
 >(function DropdownTrigger({ className, children, ...props }, forwarded) {
   const ctx = React.useContext(DropdownContext)!;
+  const { triggerRef } = ctx;
   const setRefs = React.useCallback(
     (el: HTMLButtonElement | null) => {
-      ctx.triggerRef.current = el;
+      triggerRef.current = el;
       if (typeof forwarded === "function") forwarded(el);
       else if (forwarded) forwarded.current = el;
     },
-    [ctx.triggerRef, forwarded],
+    [triggerRef, forwarded],
   );
   return (
     <button

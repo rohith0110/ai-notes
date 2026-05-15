@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 export function LandingNav() {
   return (
     <header className="sticky top-0 z-30 border-b border-white/6 bg-black/70 backdrop-blur-md">
-      <div className="mx-auto flex h-15 max-w-6xl items-center justify-between px-6">
+      <div className="mx-auto flex h-15 max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link href="/" className="flex items-center gap-2">
           <Brandmark />
           <span className="text-[15px] font-medium tracking-tight text-white">

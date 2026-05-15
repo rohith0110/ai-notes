@@ -12,9 +12,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
-import { Doc, Id } from "@/convex/_generated/dataModel";
+import { Doc } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
-import { cn, contentDrift, formatRelativeTime } from "@/lib/utils";
+import { cn, contentDrift } from "@/lib/utils";
 
 type NoteWithViewer = Doc<"notes"> & {
   viewerRole?: "owner" | "editor" | "viewer";
@@ -59,7 +59,7 @@ export function AIPanel({
       } else {
         toast.success("Insights updated");
       }
-    } catch (e) {
+    } catch {
       toast.error("AI generation failed");
     } finally {
       setBusy(null);
@@ -181,7 +181,7 @@ function Section({
   note,
   children,
 }: {
-  icon: any;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   title: string;
   stale?: boolean;
   onRefresh?: () => void;

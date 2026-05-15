@@ -15,18 +15,17 @@ import { useEffect, useState } from "react";
 export function ConvexAuthBanner() {
   const { isSignedIn, isLoaded } = useAuth();
   const { isAuthenticated, isLoading } = useConvexAuth();
-  const [show, setShow] = useState(false);
+  const [timerFired, setTimerFired] = useState(false);
+
+  const show = timerFired && isLoaded && !isLoading && !!isSignedIn && !isAuthenticated;
 
   useEffect(() => {
-    if (!isLoaded || isLoading) {
-      setShow(false);
-      return;
-    }
-    if (isSignedIn && !isAuthenticated) {
-      const t = setTimeout(() => setShow(true), 2000);
-      return () => clearTimeout(t);
-    }
-    setShow(false);
+    if (!isLoaded || isLoading || !isSignedIn || isAuthenticated) return;
+    const t = setTimeout(() => setTimerFired(true), 2000);
+    return () => {
+      clearTimeout(t);
+      setTimerFired(false);
+    };
   }, [isLoaded, isLoading, isSignedIn, isAuthenticated]);
 
   if (!show) return null;
@@ -40,7 +39,7 @@ export function ConvexAuthBanner() {
         />
         <div className="flex-1 leading-snug text-zinc-300">
           <span className="font-medium text-amber-200">
-            Convex isn't receiving your Clerk JWT.
+            Convex isn&apos;t receiving your Clerk JWT.
           </span>{" "}
           Open Clerk dashboard →{" "}
           <span className="font-mono text-zinc-200">JWT Templates</span> → new

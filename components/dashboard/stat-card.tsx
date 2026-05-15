@@ -16,7 +16,7 @@ export function StatCard({
   return (
     <div
       className={cn(
-        "rounded-lg border border-white/6 bg-white/1.5 p-5",
+        "rounded-lg border border-white/6 bg-white/1.5 p-4 sm:p-5",
         "transition-colors hover:bg-white/2.5",
         className,
       )}

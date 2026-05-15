@@ -7,7 +7,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex h-[100dvh] flex-col">
       <AppHeader />
       <ConvexAuthBanner />
       <main className="flex-1 overflow-y-auto bg-black">{children}</main>

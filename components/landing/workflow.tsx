@@ -21,8 +21,8 @@ export function Workflow() {
   ];
   return (
     <section className="relative border-t border-white/6">
-      <div className="mx-auto max-w-6xl px-6 py-24 sm:py-32">
-        <div className="max-w-2xl mb-14">
+      <div className="mx-auto max-w-6xl px-5 py-16 sm:px-6 sm:py-32">
+        <div className="max-w-2xl mb-10 sm:mb-14">
           <div className="font-mono text-[13px] text-zinc-500 tracking-wide uppercase mb-3">
             <span className="text-zinc-500">[02]</span> The Flow
           </div>

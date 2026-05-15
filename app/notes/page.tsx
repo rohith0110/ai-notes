@@ -41,7 +41,7 @@ export default function NotesIndexPage() {
   }
 
   return (
-    <div className="flex h-full flex-col items-center justify-center px-8 text-center">
+    <div className="flex h-full flex-col items-center justify-center px-5 py-10 text-center sm:px-8">
       <div className="relative">
         <div className="absolute inset-0 bg-grid bg-grid-fade opacity-40 pointer-events-none" />
         <div className="relative">
@@ -60,7 +60,7 @@ export default function NotesIndexPage() {
             Create your first note
           </Button>
 
-          <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-3 text-left max-w-2xl mx-auto">
+          <div className="mt-10 sm:mt-16 grid grid-cols-1 sm:grid-cols-3 gap-3 text-left max-w-2xl mx-auto">
             <Tip icon={Sparkles} title="AI assistance">
               Generate summaries and action items on demand
             </Tip>
@@ -82,7 +82,7 @@ function Tip({
   title,
   children,
 }: {
-  icon: any;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   title: string;
   children: React.ReactNode;
 }) {

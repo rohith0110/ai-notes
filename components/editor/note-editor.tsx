@@ -9,14 +9,14 @@ import {
   Archive,
   ArchiveRestore,
   Trash2,
-  Sparkles,
   PanelRight,
   PanelRightClose,
   Eye,
   Pencil,
   Globe,
-  Lock,
   Users,
+  X,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
@@ -35,7 +35,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogBody,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { AIPanel } from "./ai-panel";
@@ -51,11 +50,11 @@ import { MarkdownPreview } from "./markdown-preview";
 import {
   cn,
   contentDrift,
-  contentHash,
   countWords,
   formatRelativeTime,
 } from "@/lib/utils";
-import { modKey } from "@/lib/platform";
+import { modKey, isTouchOS } from "@/lib/platform";
+import { useOS } from "@/lib/use-platform";
 
 type NoteWithViewer = Doc<"notes"> & {
   viewerRole: "owner" | "editor" | "viewer";
@@ -76,7 +75,12 @@ export function NoteEditor({ note }: { note: NoteWithViewer }) {
   const [tags, setTags] = React.useState<string[]>(note.tags);
   const [titleUserSet, setTitleUserSet] = React.useState(note.titleIsUserSet);
   const [view, setView] = React.useState<"write" | "preview">("write");
+  // Desktop inline AI panel — open by default. Driven purely by CSS
+  // breakpoint (`md:`), so this never affects the phone layout.
   const [aiOpen, setAiOpen] = React.useState(true);
+  // Mobile AI sheet — a separate overlay that defaults closed so it never
+  // covers the editor on load. Independent default avoids any device sniffing.
+  const [mobileAiOpen, setMobileAiOpen] = React.useState(false);
   const [shareOpen, setShareOpen] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState(false);
   const [savedAt, setSavedAt] = React.useState<number>(note.updatedAt);
@@ -169,15 +173,15 @@ export function NoteEditor({ note }: { note: NoteWithViewer }) {
 
   // Debounced autosave
   // Only includes fields the user has actually locally edited.
-  const dirty =
-    (titleLocallyEdited.current && title !== note.title) ||
-    (contentLocallyEdited.current && content !== note.content) ||
-    (tagsLocallyEdited.current && JSON.stringify(tags) !== JSON.stringify(note.tags)) ||
-    (titleLocallyEdited.current && titleUserSet !== note.titleIsUserSet);
   React.useEffect(() => {
+    const dirty =
+      (titleLocallyEdited.current && title !== note.title) ||
+      (contentLocallyEdited.current && content !== note.content) ||
+      (tagsLocallyEdited.current && JSON.stringify(tags) !== JSON.stringify(note.tags)) ||
+      (titleLocallyEdited.current && titleUserSet !== note.titleIsUserSet);
     if (!dirty || readOnly) return;
-    setSaving(true);
     const t = setTimeout(async () => {
+      setSaving(true);
       try {
         await update({
           id: note._id,
@@ -193,7 +197,7 @@ export function NoteEditor({ note }: { note: NoteWithViewer }) {
         // the user hasn't typed anything new since. This prevents a race
         // where the user types between the save call and the Convex
         // subscription update, causing the sync to overwrite new keystrokes.
-      } catch (e) {
+      } catch {
         toast.error("Could not save");
       } finally {
         setSaving(false);
@@ -203,7 +207,8 @@ export function NoteEditor({ note }: { note: NoteWithViewer }) {
       clearTimeout(t);
       setSaving(false);
     };
-  }, [title, content, tags, titleUserSet, dirty, readOnly, note._id, update]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, content, tags, titleUserSet, readOnly, note._id, update]);
 
   // Auto-regenerate title on note exit when content has drifted
   React.useEffect(() => {
@@ -241,6 +246,17 @@ export function NoteEditor({ note }: { note: NoteWithViewer }) {
     return () => window.removeEventListener("keydown", handler, { capture: true });
   }, []);
 
+  // Lock body scroll while the mobile AI sheet is open. (No setState here —
+  // only an external DOM side effect, which is the correct use of an effect.)
+  React.useEffect(() => {
+    if (!mobileAiOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileAiOpen]);
+
   const onArchive = async () => {
     try {
       await archive({ id: note._id, archived: !note.isArchived });
@@ -261,13 +277,16 @@ export function NoteEditor({ note }: { note: NoteWithViewer }) {
     }
   };
 
+  const os = useOS();
+  const showShortcuts = !isTouchOS(os);
+
   const words = React.useMemo(() => countWords(content), [content]);
 
   return (
     <div className="flex h-full min-h-0">
       <section className="flex flex-1 min-w-0 flex-col">
         {/* Top action bar */}
-        <div className="border-b border-white/6 px-5 py-2 flex items-center gap-2 shrink-0">
+        <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-2 border-b border-white/6 px-3 py-2 sm:px-5">
           <div className="flex items-center gap-2 text-[12px] text-zinc-500 font-mono">
             {saving ? (
               <span className="flex items-center gap-1.5">
@@ -298,14 +317,18 @@ export function NoteEditor({ note }: { note: NoteWithViewer }) {
               </span>
             )}
           </div>
-          <div className="ml-auto flex items-center gap-1.5">
-            <div className="flex items-center rounded-md border border-white/6 p-0.5 mr-2">
+          <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
+            <div className="mr-1 flex items-center rounded-md border border-white/6 p-0.5 sm:mr-2">
               <ViewToggle
                 active={view === "write"}
                 onClick={() => setView("write")}
                 icon={Pencil}
                 title={`Write (${modKey("/")})`}
-                shortcut={view === "preview" ? modKey("/") : undefined}
+                shortcut={
+                  showShortcuts && view === "preview"
+                    ? modKey("/")
+                    : undefined
+                }
               >
                 Write
               </ViewToggle>
@@ -314,7 +337,11 @@ export function NoteEditor({ note }: { note: NoteWithViewer }) {
                 onClick={() => setView("preview")}
                 icon={Eye}
                 title={`Preview (${modKey("/")})`}
-                shortcut={view === "write" ? modKey("/") : undefined}
+                shortcut={
+                  showShortcuts && view === "write"
+                    ? modKey("/")
+                    : undefined
+                }
               >
                 Preview
               </ViewToggle>
@@ -325,15 +352,17 @@ export function NoteEditor({ note }: { note: NoteWithViewer }) {
                 variant="secondary"
                 onClick={() => setShareOpen(true)}
                 className="text-[14px]"
+                aria-label="Share note"
               >
                 <Share2 className="h-3.5 w-3.5" />
-                Share
+                <span className="hidden sm:inline">Share</span>
               </Button>
             )}
+            {/* Desktop: toggles the inline panel */}
             <button
               onClick={() => setAiOpen((v) => !v)}
               className={cn(
-                "inline-flex h-9 w-9 items-center justify-center rounded-md transition-colors",
+                "hidden h-9 w-9 items-center justify-center rounded-md transition-colors md:inline-flex",
                 aiOpen
                   ? "bg-white/6 text-white"
                   : "text-zinc-400 hover:bg-white/4 hover:text-white",
@@ -346,6 +375,19 @@ export function NoteEditor({ note }: { note: NoteWithViewer }) {
               ) : (
                 <PanelRight className="h-4.5 w-4.5" strokeWidth={1.5} />
               )}
+            </button>
+            {/* Mobile: opens the AI sheet overlay */}
+            <button
+              onClick={() => setMobileAiOpen((v) => !v)}
+              className={cn(
+                "inline-flex h-9 w-9 items-center justify-center rounded-md transition-colors md:hidden",
+                mobileAiOpen
+                  ? "bg-white/6 text-white"
+                  : "text-zinc-400 hover:bg-white/4 hover:text-white",
+              )}
+              aria-label="Open AI panel"
+            >
+              <Sparkles className="h-4.5 w-4.5" strokeWidth={1.5} />
             </button>
             {isOwner && (
               <Dropdown>
@@ -381,7 +423,7 @@ export function NoteEditor({ note }: { note: NoteWithViewer }) {
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-3xl px-8 py-8">
+          <div className="mx-auto max-w-3xl px-4 py-6 sm:px-8 sm:py-8">
             <input
               value={title}
               readOnly={readOnly}
@@ -406,10 +448,11 @@ export function NoteEditor({ note }: { note: NoteWithViewer }) {
             </div>
 
             {view === "write" && !readOnly && (
-              <div className="mb-3 flex items-center justify-between border-b border-white/4 pb-2">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-white/4 pb-2">
                 <MarkdownToolbar ctxRef={ctxRef} />
                 <div className="font-mono text-[13px] text-zinc-600">
-                  {words} word{words === 1 ? "" : "s"} · markdown
+                  {words} word{words === 1 ? "" : "s"}
+                  <span className="hidden sm:inline"> · markdown</span>
                 </div>
               </div>
             )}
@@ -452,6 +495,38 @@ export function NoteEditor({ note }: { note: NoteWithViewer }) {
         </aside>
       )}
 
+      {/* Mobile AI sheet — slides in from the right over the editor */}
+      <div className="md:hidden" aria-hidden={!mobileAiOpen}>
+        <div
+          onClick={() => setMobileAiOpen(false)}
+          aria-hidden
+          className={cn(
+            "fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300",
+            mobileAiOpen ? "opacity-100" : "pointer-events-none opacity-0",
+          )}
+        />
+        <aside
+          className={cn(
+            "fixed inset-y-0 right-0 z-50 flex w-80 max-w-[85vw] flex-col bg-zinc-950 transition-transform duration-300 ease-out",
+            mobileAiOpen ? "translate-x-0" : "translate-x-full",
+          )}
+        >
+          <div className="flex items-center justify-end border-b border-white/6 px-2 py-1.5">
+            <button
+              type="button"
+              onClick={() => setMobileAiOpen(false)}
+              aria-label="Close AI panel"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-white/5 hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <AIPanel note={note} />
+          </div>
+        </aside>
+      </div>
+
       {isOwner && (
         <ShareDialog open={shareOpen} onOpenChange={setShareOpen} note={note} />
       )}
@@ -461,7 +536,7 @@ export function NoteEditor({ note }: { note: NoteWithViewer }) {
           <DialogHeader>
             <DialogTitle>Delete this note?</DialogTitle>
             <DialogDescription>
-              "{note.title}" will be permanently removed. This cannot be undone.
+              &quot;{note.title}&quot; will be permanently removed. This cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -498,7 +573,7 @@ function ViewToggle({
 }: {
   active: boolean;
   onClick: () => void;
-  icon: any;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   title?: string;
   shortcut?: string;
   children: React.ReactNode;
@@ -508,16 +583,16 @@ function ViewToggle({
       onClick={onClick}
       title={title}
       className={cn(
-        "inline-flex items-center gap-1 rounded px-2 py-0.5 text-[13px] transition-colors",
+        "inline-flex items-center gap-1 rounded px-2 py-1 text-[13px] transition-colors sm:py-0.5",
         active
           ? "bg-white/8 text-white"
           : "text-zinc-400 hover:text-zinc-200",
       )}
     >
-      <Icon className="h-3.5 w-3.5" strokeWidth={1.5} />
-      {children}
+      <Icon className="h-4 w-4 sm:h-3.5 sm:w-3.5" strokeWidth={1.5} />
+      <span className="hidden sm:inline">{children}</span>
       {shortcut && (
-        <kbd className="ml-1.5 inline-flex h-5 items-center rounded bg-white/5 border border-white/10 px-1.5 font-mono text-[11px] text-zinc-400">
+        <kbd className="ml-1.5 hidden h-5 items-center rounded bg-white/5 border border-white/10 px-1.5 font-mono text-[11px] text-zinc-400 md:inline-flex">
           {shortcut}
         </kbd>
       )}

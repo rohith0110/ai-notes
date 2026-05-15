@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "./providers";
 import "./globals.css";
@@ -17,6 +17,13 @@ export const metadata: Metadata = {
   title: "Inkwell — AI Notes Workspace",
   description:
     "A collaborative, AI-powered notes workspace. Capture ideas, summarize, share.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#000000",
 };
 
 export default function RootLayout({

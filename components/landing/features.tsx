@@ -41,7 +41,7 @@ const features = [
   {
     icon: Keyboard,
     title: "Built for the keyboard",
-    body: "Ctrl+N new note · Ctrl+/ toggle preview · Ctrl+K search · all the shortcuts you'd expect.",
+    body: "New note, preview toggle, and instant search — all on low-conflict shortcuts that adapt to macOS and Windows.",
     meta: "shortcuts",
   },
 ];
@@ -49,7 +49,7 @@ const features = [
 export function Features() {
   return (
     <section className="relative border-t border-white/6 bg-black">
-      <div className="mx-auto max-w-6xl px-6 py-24 sm:py-32">
+      <div className="mx-auto max-w-6xl px-5 py-16 sm:px-6 sm:py-32">
         <div className="max-w-2xl">
           <div className="font-mono text-[14px] text-zinc-500 tracking-wide uppercase mb-3">
             <span className="text-zinc-500">[01]</span> Capabilities
@@ -57,15 +57,15 @@ export function Features() {
           <h2 className="text-3xl sm:text-4xl font-medium tracking-tight text-white">
             Everything a notes app should be.
             <br />
-            <span className="text-zinc-500">Nothing it shouldn't.</span>
+            <span className="text-zinc-500">Nothing it shouldn&apos;t.</span>
           </h2>
         </div>
 
-        <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-white/6 border border-white/6 rounded-lg overflow-hidden">
+        <div className="mt-10 sm:mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-white/6 border border-white/6 rounded-lg overflow-hidden">
           {features.map((f) => (
             <div
               key={f.title}
-              className="group relative bg-black p-6 transition-colors hover:bg-zinc-950"
+              className="group relative bg-black p-5 sm:p-6 transition-colors hover:bg-zinc-950"
             >
               <div className="flex items-center justify-between mb-5">
                 <div className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-white/10 bg-white/3 text-zinc-300 transition-all group-hover:border-white/20 group-hover:text-white">

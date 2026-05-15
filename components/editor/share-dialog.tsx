@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
-import { Doc, Id } from "@/convex/_generated/dataModel";
+import { Doc } from "@/convex/_generated/dataModel";
 import {
   Dialog,
   DialogContent,
@@ -52,7 +52,7 @@ export function ShareDialog({
     try {
       await setPublic({ id: note._id, isPublic: !note.isPublic });
       toast.success(!note.isPublic ? "Note is now public" : "Note is private");
-    } catch (e) {
+    } catch {
       toast.error("Could not change visibility");
     } finally {
       setBusy(false);
@@ -71,7 +71,7 @@ export function ShareDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Share "{note.title}"</DialogTitle>
+          <DialogTitle>Share &quot;{note.title}&quot;</DialogTitle>
           <DialogDescription>
             Anyone with the public link can view this note. Approve edit
             access from notifications.
@@ -120,7 +120,7 @@ export function ShareDialog({
                 <input
                   readOnly
                   value={shareUrl}
-                  className="flex-1 bg-transparent text-[12px] text-zinc-200 outline-none font-mono"
+                  className="min-w-0 flex-1 bg-transparent text-[12px] text-zinc-200 outline-none font-mono"
                   onFocus={(e) => e.currentTarget.select()}
                 />
                 <button
@@ -161,7 +161,7 @@ export function ShareDialog({
             {!collaborators || collaborators.length === 0 ? (
               <div className="text-[13px] text-zinc-500 leading-relaxed">
                 No collaborators yet. Visitors can request access from the
-                public share page; you'll see those requests in your
+                public share page; you&apos;ll see those requests in your
                 notifications bell.
               </div>
             ) : (

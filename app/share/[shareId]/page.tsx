@@ -29,19 +29,19 @@ export default function PublicSharePage() {
 
   if (note === undefined) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-[100dvh] flex items-center justify-center">
         <div className="font-mono text-xs text-zinc-600">loading…</div>
       </div>
     );
   }
   if (note === null) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center">
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center px-6 text-center">
         <FileX
           className="mb-3 h-6 w-6 text-zinc-600"
           strokeWidth={1.5}
         />
-        <h1 className="text-lg text-zinc-200">This note isn't available</h1>
+        <h1 className="text-lg text-zinc-200">This note isn&apos;t available</h1>
         <p className="mt-1 text-[12px] text-zinc-500">
           It may have been made private or deleted.
         </p>
@@ -69,7 +69,7 @@ export default function PublicSharePage() {
       } else if (result.status === "already_collaborator") {
         toast.success("You already have access");
       }
-    } catch (e) {
+    } catch {
       toast.error("Could not request access");
     } finally {
       setBusy(false);
@@ -95,9 +95,9 @@ export default function PublicSharePage() {
     accessRole === "viewer";
 
   return (
-    <main className="min-h-screen bg-black">
+    <main className="min-h-[100dvh] bg-black">
       <header className="sticky top-0 z-10 border-b border-white/6 bg-black/80 backdrop-blur-md">
-        <div className="mx-auto max-w-3xl px-6 h-12 flex items-center justify-between">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 h-12 flex items-center justify-between gap-3">
           <Link href="/" className="flex items-center gap-2 group">
             <Brandmark className="h-4 w-4 text-zinc-300 transition-transform group-hover:rotate-12" />
             <span className="text-sm font-medium tracking-tight text-zinc-200">
@@ -142,12 +142,12 @@ export default function PublicSharePage() {
         </div>
       </header>
 
-      <article className="mx-auto max-w-3xl px-6 py-12">
+      <article className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
         <div className="font-mono text-[11px] text-zinc-500 mb-2">
           shared by {note.ownerName} · updated{" "}
           {formatRelativeTime(note.updatedAt)}
         </div>
-        <h1 className="text-3xl sm:text-4xl font-medium tracking-tight text-white mb-4">
+        <h1 className="text-2xl sm:text-4xl font-medium tracking-tight text-white mb-4">
           {note.title}
         </h1>
         {note.tags.length > 0 && (
@@ -198,7 +198,7 @@ export default function PublicSharePage() {
 
         <div className="mt-16 border-t border-white/6 pt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="text-[12px] text-zinc-500">
-            You're viewing this note via a public link.
+            You&apos;re viewing this note via a public link.
             {showRequest &&
               " Request edit access to collaborate with the owner."}
             {isPending &&

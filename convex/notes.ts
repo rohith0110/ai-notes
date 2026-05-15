@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query, internalMutation } from "./_generated/server";
+import { mutation, query, internalMutation, QueryCtx } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 import {
   getAccessibleNote,
@@ -26,14 +26,12 @@ function countWords(text: string): number {
 }
 
 async function listAccessibleNoteIds(
-  ctx: { db: { query: any } },
+  ctx: QueryCtx,
   userId: Id<"users">,
 ): Promise<Set<Id<"notes">>> {
   const collab: Doc<"collaborators">[] = await ctx.db
     .query("collaborators")
-    .withIndex("by_user", (q: { eq: (k: "userId", v: Id<"users">) => unknown }) =>
-      q.eq("userId", userId),
-    )
+    .withIndex("by_user", (q) => q.eq("userId", userId))
     .collect();
   return new Set(collab.map((c) => c.noteId));
 }

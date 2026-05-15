@@ -13,7 +13,7 @@ export function Hero() {
       <div className="absolute inset-0 bg-grid bg-grid-fade opacity-60 pointer-events-none" />
       <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/20 to-transparent" />
 
-      <div className="relative mx-auto max-w-6xl px-6 pt-24 pb-32 sm:pt-32 sm:pb-40">
+      <div className="relative mx-auto max-w-6xl px-5 pt-20 pb-24 sm:px-6 sm:pt-32 sm:pb-40">
         <div className="flex items-center gap-2 animate-fade-up [animation-delay:0ms]">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/3 px-2.5 py-1 text-[13px] font-medium text-zinc-400 tracking-wide">
             <span className="relative inline-flex h-1.5 w-1.5">
@@ -25,7 +25,7 @@ export function Hero() {
         </div>
 
         <h1
-          className="mt-7 max-w-3xl text-[44px] sm:text-6xl lg:text-7xl font-medium tracking-[-0.035em] leading-[0.98] text-white animate-fade-up [animation-delay:80ms]"
+          className="mt-7 max-w-3xl text-4xl sm:text-6xl lg:text-7xl font-medium tracking-[-0.035em] leading-[1.02] sm:leading-[0.98] text-white animate-fade-up [animation-delay:80ms]"
         >
           A workspace for{" "}
           <span className="relative inline-block">
@@ -60,7 +60,7 @@ export function Hero() {
               </Button>
             </Link>
           </Show>
-          <div className="flex items-center gap-2 text-sm text-zinc-500">
+          <div className="hidden sm:flex items-center gap-2 text-sm text-zinc-500">
             <span className="text-zinc-700">-</span>
             <span className="flex items-center gap-1">
               <Kbd>{isMac() ? "⌘" : "Ctrl"}</Kbd>
@@ -70,7 +70,7 @@ export function Hero() {
           </div>
         </div>
 
-        <div className="relative mt-20 animate-fade-up [animation-delay:360ms]">
+        <div className="relative mt-12 sm:mt-20 animate-fade-up [animation-delay:360ms]">
           <FloatingPreview />
         </div>
       </div>
@@ -112,7 +112,7 @@ function FloatingPreview() {
               )}
             </div>
           </div>
-          <div className="col-span-12 sm:col-span-9 p-5">
+          <div className="col-span-12 sm:col-span-9 p-4 sm:p-5">
             <div className="text-xs text-zinc-600 font-mono mb-3">
               # markdown · 432 words · 2m ago
             </div>

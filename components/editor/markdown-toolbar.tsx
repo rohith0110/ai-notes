@@ -13,7 +13,6 @@ import {
   Quote,
   CheckSquare,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { modKey } from "@/lib/platform";
 
 type Action = {
@@ -100,7 +99,7 @@ export function MarkdownToolbar({ ctxRef }: { ctxRef: React.RefObject<EditorCtx 
           type="button"
           onClick={() => ctxRef.current && a.fn(ctxRef.current)}
           title={a.shortcut ? `${a.label} (${a.shortcut})` : a.label}
-          className="inline-flex h-7 w-7 items-center justify-center rounded text-zinc-400 hover:bg-white/6 hover:text-white transition-colors"
+          className="inline-flex h-8 w-8 items-center justify-center rounded text-zinc-400 hover:bg-white/6 hover:text-white transition-colors sm:h-7 sm:w-7"
         >
           <a.icon className="h-4.5 w-4.5" strokeWidth={2} />
         </button>

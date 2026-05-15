@@ -5,6 +5,7 @@ import { Bell, Check, X, FileText } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 import {
   Dropdown,
   DropdownTrigger,
@@ -19,14 +20,14 @@ export function NotificationsBell() {
   const count = requests?.length ?? 0;
 
   const onRespond = async (
-    id: any,
+    id: Id<"shareRequests">,
     approve: boolean,
     role: "viewer" | "editor" = "editor",
   ) => {
     try {
       await respond({ requestId: id, approve, role });
       toast.success(approve ? "Access granted" : "Request denied");
-    } catch (e) {
+    } catch {
       toast.error("Could not update request");
     }
   };
@@ -100,7 +101,7 @@ export function NotificationsBell() {
                     </Link>
                     {r.message && (
                       <div className="mt-1 text-[11px] text-zinc-500 line-clamp-2 border-l border-white/10 pl-2 italic">
-                        "{r.message}"
+                        &quot;{r.message}&quot;
                       </div>
                     )}
                     <div className="mt-2 flex items-center gap-1.5">

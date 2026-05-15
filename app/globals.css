@@ -33,6 +33,20 @@ a,button{
   cursor: pointer;
 }
 
+/* Mobile: kill the grey tap flash and prevent iOS Safari from auto-zooming
+   when focusing a field with a sub-16px font. The visual scale of inputs is
+   otherwise driven by Tailwind utilities. */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+@media (max-width: 640px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
 ::selection {
   background: #fff;
   color: #000;
@@ -228,6 +242,20 @@ a,button{
 .prose-notes input[type="checkbox"] {
   margin-right: 0.5em;
   accent-color: #fff;
+}
+/* Mobile: keep wide content from blowing out the viewport. Long URLs and
+   tokens wrap, code blocks and tables scroll within their own box. */
+.prose-notes {
+  overflow-wrap: anywhere;
+}
+.prose-notes pre {
+  max-width: 100%;
+}
+.prose-notes table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 /* Animations */

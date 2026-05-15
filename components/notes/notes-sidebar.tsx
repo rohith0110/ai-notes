@@ -12,7 +12,6 @@ import {
   FileText,
   Hash,
   Inbox,
-  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
@@ -21,14 +20,30 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { rankItems } from "@/lib/fuzzy";
-import { modKey } from "@/lib/platform";
+import {
+  isTouchOS,
+  matchesNewNoteShortcut,
+  newNoteShortcutLabel,
+  searchShortcutLabel,
+} from "@/lib/platform";
+import { useOS } from "@/lib/use-platform";
 
 type View = "active" | "archived";
 
-export function NotesSidebar() {
+export function NotesSidebar({
+  mobileOpen = false,
+  onClose,
+}: {
+  mobileOpen?: boolean;
+  onClose?: () => void;
+}) {
   const router = useRouter();
   const params = useParams<{ id?: string }>();
   const pathname = usePathname();
+  const os = useOS();
+  const showShortcuts = !isTouchOS(os);
+  const newNoteLabel = newNoteShortcutLabel(os);
+  const searchLabel = searchShortcutLabel(os);
   const [query, setQuery] = React.useState("");
   const [debouncedQuery, setDebouncedQuery] = React.useState("");
   const [activeTag, setActiveTag] = React.useState<string | null>(null);
@@ -62,45 +77,95 @@ export function NotesSidebar() {
       })),
       debouncedQuery,
     );
-    return ranked.map((r) => (r as any)._full as Doc<"notes">);
+    return ranked.map((r) => (r)._full as Doc<"notes">);
   }, [notes, activeTag, debouncedQuery]);
 
-  const onNew = async () => {
+  const onNew = React.useCallback(async () => {
     try {
       const id = await createNote({});
       router.push(`/notes/${id}`);
+      onClose?.();
       toast.success("New note created");
-    } catch (e) {
+    } catch {
       toast.error("Could not create note");
     }
-  };
+  }, [createNote, router, onClose]);
 
+  // Keyboard shortcuts.
+  //
+  // "New note" is Ctrl+Alt+N (Win/Linux) / ⌘⌥N (macOS). The browser reserves
+  // Ctrl/Cmd+N (new window) at the OS level and won't let the page cancel it,
+  // so we use this low-conflict combo instead. Because it's modifier-guarded
+  // it can fire even while the caret is inside another note's editor — no
+  // typing-target check needed. Search stays on Ctrl/Cmd+K.
   React.useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "n") {
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        document.getElementById("sidebar-search")?.focus();
+        return;
+      }
+      if (matchesNewNoteShortcut(e, os)) {
         e.preventDefault();
         onNew();
       }
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        document.getElementById("sidebar-search")?.focus();
-      }
     };
     window.addEventListener("keydown", handler, { capture: true });
-    return () => window.removeEventListener("keydown", handler, { capture: true });
-  }, []);
+    return () =>
+      window.removeEventListener("keydown", handler, { capture: true });
+  }, [onNew, os]);
 
   const activeId = params?.id as Id<"notes"> | undefined;
 
   return (
-    <aside className="flex h-full w-72 flex-col border-r border-white/6 bg-zinc-950/30">
+    <>
+      {/* Mobile backdrop */}
+      <div
+        onClick={onClose}
+        aria-hidden
+        className={cn(
+          "fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 md:hidden",
+          mobileOpen
+            ? "opacity-100"
+            : "pointer-events-none opacity-0",
+        )}
+      />
+      <aside
+        className={cn(
+          "flex w-72 max-w-[85vw] flex-col border-r border-white/6",
+          // Mobile: fixed slide-in drawer. Desktop: static column in flow.
+          "fixed inset-y-0 left-0 z-50 bg-zinc-950 transition-transform duration-300 ease-out",
+          "md:static md:z-auto md:h-full md:max-w-none md:translate-x-0 md:bg-zinc-950/30 md:transition-none",
+          mobileOpen ? "translate-x-0" : "-translate-x-full",
+        )}
+      >
       <div className="border-b border-white/6 p-3 space-y-2">
-        <Button onClick={onNew} className="w-full justify-center" size="md" title={`${modKey("N")} — new note`}>
+        <div className="flex items-center justify-between md:hidden">
+          <span className="font-mono text-[11px] uppercase tracking-wider text-zinc-500">
+            Notes
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close note list"
+            className="-mr-1 inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-white/5 hover:text-white"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <Button
+          onClick={onNew}
+          className="w-full justify-center"
+          size="md"
+          title={showShortcuts ? `New note — ${newNoteLabel}` : "New note"}
+        >
           <Plus className="h-3.5 w-3.5" />
           New note
-          <kbd className="ml-auto inline-flex h-5 items-center rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[11px] text-zinc-400 tracking-wide">
-            {modKey("N")}
-          </kbd>
+          {showShortcuts && (
+            <kbd className="ml-auto hidden h-5 items-center rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[11px] tracking-wide text-zinc-400 md:inline-flex">
+              {newNoteLabel}
+            </kbd>
+          )}
         </Button>
         <div className="relative">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500" />
@@ -109,9 +174,12 @@ export function NotesSidebar() {
             placeholder="Search…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="h-8 pl-8 pr-7 text-[13px]"
+            className={cn(
+              "h-8 pl-8 text-[13px]",
+              showShortcuts ? "pr-7 md:pr-16" : "pr-7",
+            )}
           />
-          {query && (
+          {query ? (
             <button
               onClick={() => setQuery("")}
               aria-label="Clear search"
@@ -119,6 +187,12 @@ export function NotesSidebar() {
             >
               <X className="h-3 w-3" />
             </button>
+          ) : (
+            showShortcuts && (
+              <kbd className="pointer-events-none absolute right-2 top-1/2 hidden h-5 -translate-y-1/2 items-center rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[11px] text-zinc-400 md:inline-flex">
+                {searchLabel}
+              </kbd>
+            )
           )}
         </div>
       </div>
@@ -195,23 +269,30 @@ export function NotesSidebar() {
           <ul className="p-2 space-y-0.5">
             {filtered.map((n) => (
               <li key={n._id}>
-                <NoteItem note={n} active={activeId === n._id} />
+                <NoteItem
+                  note={n}
+                  active={activeId === n._id}
+                  onNavigate={onClose}
+                />
               </li>
             ))}
           </ul>
         )}
       </div>
 
-      <div className="border-t border-white/6 px-3 py-2 flex items-center justify-between font-mono text-[10px] text-zinc-600">
+      <div className="flex items-center justify-between border-t border-white/6 px-3 py-2 font-mono text-[10px] text-zinc-600">
         <span>
           {filtered?.length ?? 0} {view === "archived" ? "archived" : "active"}
         </span>
-        <span>
-          <span className="mr-1">{modKey("N")}</span>new ·{" "}
-          <span className="mx-1">{modKey("K")}</span>search
-        </span>
+        {showShortcuts && (
+          <span className="hidden md:inline">
+            <span className="mr-1">{newNoteLabel}</span>new ·{" "}
+            <span className="mx-1">{searchLabel}</span>search
+          </span>
+        )}
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }
 
@@ -245,14 +326,17 @@ function ViewTab({
 function NoteItem({
   note,
   active,
+  onNavigate,
 }: {
   note: Doc<"notes">;
   active: boolean;
+  onNavigate?: () => void;
 }) {
   const preview = note.contentText.slice(0, 70);
   return (
     <Link
       href={`/notes/${note._id}`}
+      onClick={onNavigate}
       className={cn(
         "block rounded-md px-2.5 py-2 transition-colors group",
         active
@@ -314,7 +398,7 @@ function EmptyState({
       <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
         <Search className="mb-3 h-5 w-5 text-zinc-600" strokeWidth={1.5} />
         <div className="text-[13px] text-zinc-400">No matches</div>
-        <div className="mt-1 text-[11px] text-zinc-600 font-mono">"{query}"</div>
+        <div className="mt-1 text-[11px] text-zinc-600 font-mono">&quot;{query}&quot;</div>
       </div>
     );
   }

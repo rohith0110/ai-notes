@@ -64,7 +64,7 @@ export function DialogContent({
       />
       <div
         className={cn(
-          "relative z-10 w-full max-w-md overflow-hidden rounded-xl border border-white/10 bg-zinc-950 shadow-2xl animate-fade-up",
+          "relative z-10 max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-xl border border-white/10 bg-zinc-950 shadow-2xl animate-fade-up",
           className,
         )}
       >

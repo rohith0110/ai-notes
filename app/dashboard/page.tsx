@@ -9,7 +9,6 @@ import {
   Globe,
   Hash,
   ArrowRight,
-  TrendingUp,
   ChevronRight,
 } from "lucide-react";
 import { api } from "@/convex/_generated/api";
@@ -23,24 +22,24 @@ export default function DashboardPage() {
 
   if (data === undefined || data === null) {
     return (
-      <div className="mx-auto max-w-6xl px-6 py-10">
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
         <div className="font-mono text-xs text-zinc-600">loading…</div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10">
-      <div className="mb-10">
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
+      <div className="mb-8 sm:mb-10">
         <div className="font-mono text-[11px] text-zinc-500 uppercase tracking-wider mb-1">
           Dashboard
         </div>
-        <h1 className="text-3xl font-medium tracking-tight text-white">
+        <h1 className="text-2xl sm:text-3xl font-medium tracking-tight text-white">
           Your week, at a glance.
         </h1>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-10">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8 sm:mb-10">
         <StatCard
           icon={FileText}
           label="Total notes"
@@ -67,9 +66,9 @@ export default function DashboardPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-10">
-        <div className="lg:col-span-2 rounded-lg border border-white/6 bg-white/1.5 p-5">
-          <div className="flex items-center justify-between mb-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-8 sm:mb-10">
+        <div className="lg:col-span-2 rounded-lg border border-white/6 bg-white/1.5 p-4 sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-5">
             <div>
               <div className="text-[10px] uppercase tracking-wider font-mono text-zinc-500 mb-0.5">
                 Weekly activity
@@ -92,7 +91,7 @@ export default function DashboardPage() {
           <Sparkline data={data.weeklyActivity} />
         </div>
 
-        <div className="rounded-lg border border-white/6 bg-white/1.5 p-5">
+        <div className="rounded-lg border border-white/6 bg-white/1.5 p-4 sm:p-5">
           <div className="text-[10px] uppercase tracking-wider font-mono text-zinc-500 mb-3">
             AI breakdown (7d)
           </div>
@@ -106,7 +105,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <div className="lg:col-span-2 rounded-lg border border-white/6 bg-white/1.5 overflow-hidden">
-          <div className="px-5 py-3 border-b border-white/6 flex items-center justify-between">
+          <div className="px-4 sm:px-5 py-3 border-b border-white/6 flex items-center justify-between">
             <div className="text-[10px] uppercase tracking-wider font-mono text-zinc-500">
               Recent notes
             </div>
@@ -136,14 +135,14 @@ export default function DashboardPage() {
                 <li key={n._id}>
                   <Link
                     href={`/notes/${n._id}`}
-                    className="block px-5 py-3 hover:bg-white/2 transition-colors"
+                    className="block px-4 sm:px-5 py-3 hover:bg-white/2 transition-colors"
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="text-[13px] font-medium text-zinc-200 truncate">
                           {n.title || "Untitled"}
                         </div>
-                        <div className="flex items-center gap-2 mt-0.5 text-[11px] text-zinc-500">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5 text-[11px] text-zinc-500">
                           <span>{n.wordCount} words</span>
                           {n.tags.slice(0, 3).map((t) => (
                             <span key={t} className="font-mono">
@@ -164,7 +163,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="rounded-lg border border-white/6 bg-white/1.5 overflow-hidden">
-          <div className="px-5 py-3 border-b border-white/6">
+          <div className="px-4 sm:px-5 py-3 border-b border-white/6">
             <div className="text-[10px] uppercase tracking-wider font-mono text-zinc-500">
               Most-used tags
             </div>
