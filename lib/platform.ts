@@ -52,24 +52,24 @@ export function isTouchOS(os: OS): boolean {
 }
 
 /**
- * "New note" shortcut. Bound to Ctrl+Alt+N (Win/Linux) / ⌘⌥N (macOS) — a
- * low-conflict combo that the browser lets the page intercept, so it works
- * even while the caret is inside another note's editor.
+ * "New note" shortcut — Ctrl+\ (Win/Linux) / ⌘\ (macOS).
+ * Low-conflict; browser lets the page intercept it even while the caret is
+ * inside the editor textarea.
  */
 export function newNoteShortcutLabel(os: OS): string {
-  return os === "mac" ? "⌘⌥N" : "Ctrl+Alt+N";
+  return os === "mac" ? "⌘\\" : "Ctrl+\\";
 }
 
 /**
- * Matches on `event.code` ("KeyN") rather than `event.key` because holding
- * Option on macOS rewrites `key` into a dead/special character.
+ * Matches Ctrl+\ (Win/Linux) or ⌘\ (Mac). Uses `event.code` ("Backslash")
+ * so it is keyboard-layout independent.
  */
 export function matchesNewNoteShortcut(
-  e: Pick<KeyboardEvent, "code" | "altKey" | "ctrlKey" | "metaKey">,
+  e: Pick<KeyboardEvent, "code" | "altKey" | "shiftKey" | "ctrlKey" | "metaKey">,
   os: OS,
 ): boolean {
-  if (e.code !== "KeyN") return false;
-  if (!e.altKey) return false;
+  if (e.code !== "Backslash") return false;
+  if (e.altKey || e.shiftKey) return false;
   return os === "mac" ? e.metaKey : e.ctrlKey;
 }
 

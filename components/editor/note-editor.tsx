@@ -53,8 +53,6 @@ import {
   countWords,
   formatRelativeTime,
 } from "@/lib/utils";
-import { modKey, isTouchOS } from "@/lib/platform";
-import { useOS } from "@/lib/use-platform";
 
 type NoteWithViewer = Doc<"notes"> & {
   viewerRole: "owner" | "editor" | "viewer";
@@ -100,6 +98,11 @@ export function NoteEditor({ note }: { note: NoteWithViewer }) {
   // from "server pushed an update that differs from local state".
   const contentLocallyEdited = React.useRef(false);
   const tagsLocallyEdited = React.useRef(false);
+
+  // Undo/redo history for textarea content only.
+  type HistEntry = { content: string; sel: number };
+  const historyRef = React.useRef<HistEntry[]>([{ content: note.content, sel: 0 }]);
+  const histIdxRef = React.useRef(0);
 
   const readOnly = note.viewerRole === "viewer";
   const isOwner = note.viewerRole === "owner";
@@ -156,6 +159,33 @@ export function NoteEditor({ note }: { note: NoteWithViewer }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [note.title, note.content, note.tags, note.titleIsUserSet, note.updatedAt]);
+
+  // Reset undo/redo history when switching to a different note.
+  React.useEffect(() => {
+    historyRef.current = [{ content: note.content, sel: 0 }];
+    histIdxRef.current = 0;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [note._id]);
+
+  // Snapshot content into undo history 800 ms after the user stops typing.
+  // Only snapshots local edits (not server syncs or undo/redo movements).
+  React.useEffect(() => {
+    if (readOnly) return;
+    const cur = historyRef.current;
+    const idx = histIdxRef.current;
+    if (cur[idx]?.content === content) return; // content unchanged vs current entry
+    const t = setTimeout(() => {
+      if (!contentLocallyEdited.current) return; // skip if server pushed this change
+      const latest = historyRef.current;
+      const latestIdx = histIdxRef.current;
+      if (latest[latestIdx]?.content === content) return;
+      const entry: HistEntry = { content, sel: editorRef.current?.selectionStart ?? 0 };
+      const next = latest.slice(0, latestIdx + 1).concat(entry).slice(-100);
+      historyRef.current = next;
+      histIdxRef.current = next.length - 1;
+    }, 800);
+    return () => clearTimeout(t);
+  }, [content, readOnly]);
 
   // Keep ref to editor context for toolbar
   React.useEffect(() => {
@@ -228,12 +258,35 @@ export function NoteEditor({ note }: { note: NoteWithViewer }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [note._id]);
 
-  // Cmd+/ (Mac) / Ctrl+/ (Win) toggle preview
-  // Cmd+. (Mac) / Ctrl+. (Win) toggle AI panel
-  // Use capture:true so we intercept before the browser handles e.g. Ctrl+/
+  // Auto-generate title+tags while typing — debounced 3 s after last keystroke.
+  // Fires only when content is long enough and has drifted >30% from last gen.
+  // Keeps a stable ref to `generate` so the debounce effect deps stay minimal.
+  const generateRef = React.useRef(generate);
+  React.useEffect(() => {
+    generateRef.current = generate;
+  });
+  React.useEffect(() => {
+    if (readOnly || titleUserSet) return;
+    if (content.length < 40) return;
+    if (note.lastTitleHash) {
+      const drift = contentDrift(note.lastTitleHash, note.contentText);
+      if (drift < TITLE_AUTOGEN_THRESHOLD) return;
+    }
+    const t = setTimeout(() => {
+      generateRef.current({
+        noteId: note._id,
+        kinds: ["title", "tags"],
+        applyTitle: true,
+      }).catch(() => undefined);
+    }, 8000);
+    return () => clearTimeout(t);
+  }, [content, note._id, note.lastTitleHash, note.contentText, readOnly, titleUserSet]);
+
+  // Ctrl+/ (Win) / ⌘/ (Mac): toggle Write/Preview.
+  // Ctrl+. (Win) / ⌘. (Mac): toggle AI panel.
   React.useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "/") {
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key === "/") {
         e.preventDefault();
         setView((v) => (v === "write" ? "preview" : "write"));
       }
@@ -277,16 +330,50 @@ export function NoteEditor({ note }: { note: NoteWithViewer }) {
     }
   };
 
-  const os = useOS();
-  const showShortcuts = !isTouchOS(os);
-
   const words = React.useMemo(() => countWords(content), [content]);
+
+  // Undo: restore previous history snapshot.
+  const applyUndo = React.useCallback(() => {
+    const idx = histIdxRef.current;
+    if (idx <= 0) return;
+    const newIdx = idx - 1;
+    histIdxRef.current = newIdx;
+    const entry = historyRef.current[newIdx];
+    setContent(entry.content);
+    contentLocallyEdited.current = true;
+    requestAnimationFrame(() => {
+      const el = editorRef.current;
+      if (!el) return;
+      const pos = Math.min(entry.sel, entry.content.length);
+      el.selectionStart = el.selectionEnd = pos;
+      el.focus();
+    });
+  }, []);
+
+  // Redo: restore next history snapshot.
+  const applyRedo = React.useCallback(() => {
+    const history = historyRef.current;
+    const idx = histIdxRef.current;
+    if (idx >= history.length - 1) return;
+    const newIdx = idx + 1;
+    histIdxRef.current = newIdx;
+    const entry = history[newIdx];
+    setContent(entry.content);
+    contentLocallyEdited.current = true;
+    requestAnimationFrame(() => {
+      const el = editorRef.current;
+      if (!el) return;
+      const pos = Math.min(entry.sel, entry.content.length);
+      el.selectionStart = el.selectionEnd = pos;
+      el.focus();
+    });
+  }, []);
 
   return (
     <div className="flex h-full min-h-0">
       <section className="flex flex-1 min-w-0 flex-col">
         {/* Top action bar */}
-        <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-2 border-b border-white/6 px-3 py-2 sm:px-5">
+        <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-2 border-b border-white/6 px-3 py-2">
           <div className="flex items-center gap-2 text-[12px] text-zinc-500 font-mono">
             {saving ? (
               <span className="flex items-center gap-1.5">
@@ -300,19 +387,19 @@ export function NoteEditor({ note }: { note: NoteWithViewer }) {
               </span>
             )}
             {note.isPublic && (
-              <span className="hidden sm:inline-flex items-center gap-1 ml-2 rounded border border-emerald-400/20 bg-emerald-400/5 px-1.5 py-0.5 text-[11px] text-emerald-300 uppercase tracking-wider">
+              <span className="hidden xl:inline-flex items-center gap-1 ml-2 rounded border border-emerald-400/20 bg-emerald-400/5 px-1.5 py-0.5 text-[11px] text-emerald-300 uppercase tracking-wider">
                 <Globe className="h-3 w-3" />
                 Public
               </span>
             )}
             {!isOwner && (
-              <span className="hidden sm:inline-flex items-center gap-1 ml-2 rounded border border-sky-400/20 bg-sky-400/5 px-1.5 py-0.5 text-[11px] text-sky-300 uppercase tracking-wider">
+              <span className="hidden xl:inline-flex items-center gap-1 ml-2 rounded border border-sky-400/20 bg-sky-400/5 px-1.5 py-0.5 text-[11px] text-sky-300 uppercase tracking-wider">
                 <Users className="h-3 w-3" />
                 {note.viewerRole === "editor" ? "Collaborator" : "View only"}
               </span>
             )}
             {readOnly && (
-              <span className="hidden sm:inline-flex items-center gap-1 ml-2 rounded border border-amber-400/20 bg-amber-400/5 px-1.5 py-0.5 text-[11px] text-amber-300 uppercase tracking-wider">
+              <span className="hidden xl:inline-flex items-center gap-1 ml-2 rounded border border-amber-400/20 bg-amber-400/5 px-1.5 py-0.5 text-[11px] text-amber-300 uppercase tracking-wider">
                 Read-only
               </span>
             )}
@@ -323,12 +410,7 @@ export function NoteEditor({ note }: { note: NoteWithViewer }) {
                 active={view === "write"}
                 onClick={() => setView("write")}
                 icon={Pencil}
-                title={`Write (${modKey("/")})`}
-                shortcut={
-                  showShortcuts && view === "preview"
-                    ? modKey("/")
-                    : undefined
-                }
+                title="Write"
               >
                 Write
               </ViewToggle>
@@ -336,12 +418,7 @@ export function NoteEditor({ note }: { note: NoteWithViewer }) {
                 active={view === "preview"}
                 onClick={() => setView("preview")}
                 icon={Eye}
-                title={`Preview (${modKey("/")})`}
-                shortcut={
-                  showShortcuts && view === "write"
-                    ? modKey("/")
-                    : undefined
-                }
+                title="Preview"
               >
                 Preview
               </ViewToggle>
@@ -355,7 +432,7 @@ export function NoteEditor({ note }: { note: NoteWithViewer }) {
                 aria-label="Share note"
               >
                 <Share2 className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Share</span>
+                <span className="hidden xl:inline">Share</span>
               </Button>
             )}
             {/* Desktop: toggles the inline panel */}
@@ -368,7 +445,7 @@ export function NoteEditor({ note }: { note: NoteWithViewer }) {
                   : "text-zinc-400 hover:bg-white/4 hover:text-white",
               )}
               aria-label="Toggle AI panel"
-              title={`Toggle AI panel (${modKey(".")})`}
+              title="Toggle AI panel"
             >
               {aiOpen ? (
                 <PanelRightClose className="h-4.5 w-4.5" strokeWidth={1.5} />
@@ -467,6 +544,18 @@ export function NoteEditor({ note }: { note: NoteWithViewer }) {
                   contentLocallyEdited.current = true;
                 }}
                 onKeyDown={(e) => {
+                  // Undo: Ctrl/⌘+Z
+                  if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key === "z") {
+                    e.preventDefault();
+                    applyUndo();
+                    return;
+                  }
+                  // Redo: Ctrl/⌘+Y or Ctrl/⌘+Shift+Z
+                  if ((e.metaKey || e.ctrlKey) && (e.key === "y" || (e.key === "z" && e.shiftKey))) {
+                    e.preventDefault();
+                    applyRedo();
+                    return;
+                  }
                   if (!ctxRef.current) return;
                   ctxRef.current.value = content;
                   if (applyShortcut(e, ctxRef.current)) return;
@@ -487,6 +576,7 @@ export function NoteEditor({ note }: { note: NoteWithViewer }) {
             )}
           </div>
         </div>
+
       </section>
 
       {aiOpen && (
@@ -559,6 +649,7 @@ export function NoteEditor({ note }: { note: NoteWithViewer }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }
@@ -568,14 +659,12 @@ function ViewToggle({
   onClick,
   icon: Icon,
   title,
-  shortcut,
   children,
 }: {
   active: boolean;
   onClick: () => void;
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   title?: string;
-  shortcut?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -583,19 +672,15 @@ function ViewToggle({
       onClick={onClick}
       title={title}
       className={cn(
-        "inline-flex items-center gap-1 rounded px-2 py-1 text-[13px] transition-colors sm:py-0.5",
+        "inline-flex items-center gap-1 rounded px-2 py-1 text-[13px] transition-colors",
         active
           ? "bg-white/8 text-white"
           : "text-zinc-400 hover:text-zinc-200",
       )}
     >
-      <Icon className="h-4 w-4 sm:h-3.5 sm:w-3.5" strokeWidth={1.5} />
-      <span className="hidden sm:inline">{children}</span>
-      {shortcut && (
-        <kbd className="ml-1.5 hidden h-5 items-center rounded bg-white/5 border border-white/10 px-1.5 font-mono text-[11px] text-zinc-400 md:inline-flex">
-          {shortcut}
-        </kbd>
-      )}
+      <Icon className="h-3.5 w-3.5" strokeWidth={1.5} />
+      <span className="hidden xl:inline">{children}</span>
     </button>
   );
 }
+

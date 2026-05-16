@@ -125,8 +125,8 @@ export default function PublicSharePage() {
               <>
                 <Show when="signed-out">
                   <SignInButton
-                    mode="modal"
                     forceRedirectUrl={`/share/${shareId}`}
+                    signUpForceRedirectUrl={`/share/${shareId}`}
                   >
                     <Button size="sm">Request edit access</Button>
                   </SignInButton>
@@ -210,8 +210,8 @@ export default function PublicSharePage() {
             <>
               <Show when="signed-out">
                 <SignInButton
-                  mode="modal"
                   forceRedirectUrl={`/share/${shareId}`}
+                  signUpForceRedirectUrl={`/share/${shareId}`}
                 >
                   <Button size="sm">Request edit access</Button>
                 </SignInButton>

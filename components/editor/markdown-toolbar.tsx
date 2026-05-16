@@ -85,7 +85,6 @@ const actions: Action[] = [
   {
     icon: LinkIcon,
     label: "Link",
-    shortcut: modKey("K"),
     fn: (c) => wrap(c, "[", "](url)"),
   },
 ];
@@ -121,11 +120,6 @@ export function applyShortcut(
   if (e.key === "i") {
     e.preventDefault();
     wrap(ctx, "_");
-    return true;
-  }
-  if (e.key === "k") {
-    e.preventDefault();
-    wrap(ctx, "[", "](url)");
     return true;
   }
   return false;
